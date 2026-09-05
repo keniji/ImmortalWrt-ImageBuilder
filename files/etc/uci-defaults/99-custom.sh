@@ -51,11 +51,17 @@ case "$board_name" in
         echo "Using $board_name mapping: WAN=$wan_ifname LAN=$lan_ifnames" >>"$LOGFILE"
         ;;
     *)
-        # 默认第一个接口为WAN，其余为LAN
-        wan_ifname=$(echo "$ifnames" | awk '{print $1}')
-        lan_ifnames=$(echo "$ifnames" | cut -d ' ' -f2-)
-        echo "Using default mapping: WAN=$wan_ifname LAN=$lan_ifnames" >>"$LOGFILE"
-        ;;
+        # 自定义映射：检测到 eth0 和 eth2 时，eth2 为 WAN，eth0 为 LAN（忽略 eth1）
+        if echo "$ifnames" | grep -q "eth0" && echo "$ifnames" | grep -q "eth2"; then
+            wan_ifname="eth2"
+            lan_ifnames="eth0"
+            echo "Custom mapping: WAN=$wan_ifname, LAN=$lan_ifnames (eth1 ignored)" >>"$LOGFILE"
+        else
+            # 回退到默认：第一个接口为 WAN，其余为 LAN
+            wan_ifname=$(echo "$ifnames" | awk '{print $1}')
+            lan_ifnames=$(echo "$ifnames" | cut -d ' ' -f2-)
+            echo "Using default mapping: WAN=$wan_ifname LAN=$lan_ifnames" >>"$LOGFILE"
+        fi
 esac
 
 # 3. 配置网络
